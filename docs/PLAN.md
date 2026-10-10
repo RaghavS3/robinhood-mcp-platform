@@ -17,6 +17,7 @@ A bot that reads market news during market hours, asks a fast decision model whe
 | News data | Free sources only for now |
 | Where it runs | Cloud server in Ashburn, VA: AWS us-east-1 recommended (see Cloud server). The Mac can't use Ethernet. |
 | Latency tactics | Warm connection, OpenRouter balance kept above $10, everything prepared before news hits (mandatory). Backup requests come later. |
+| Scheduled events | Read the original source directly (e.g. the Fed's site at 2:00 PM) and use pre-decided answers (fast path) |
 | Priority | Lowest possible Total Trade Latency |
 
 ## How it works
@@ -42,6 +43,14 @@ Start with three free sources: one broad streaming feed, the government sources 
 | Fed + government press releases (Fed, Treasury, White House) | FOMC statements (2:00 PM ET), Fed speeches, policy | The original source | Free | Check every 1–2 seconds during known event windows |
 | Presidential social posts | Tariff and policy posts that have moved the S&P during the trading day | Seconds, if we find a fast feed | Not known yet | Research a fast, free way to get them |
 | X accounts that repost Bloomberg/Reuters headlines | Fast relays of the big newswires | Seconds | X API is paid | Skipped for now (paid) |
+
+**The Fed's site (checked Oct 10, 2026):**
+
+- Served through Cloudflare from Ashburn (IAD), the same metro as our server.
+- FOMC statements land at a predictable address: `https://www.federalreserve.gov/newsevents/pressreleases/monetaryYYYYMMDDa.htm`. The next one, `monetary20261028a.htm`, returns 404 until it's published. There's also an RSS feed: `https://www.federalreserve.gov/feeds/press_monetary.xml`.
+- **Caveat:** the Sept 16 statement page shows last-modified 2:00:17 PM ET, and the RSS feed showed 2:00:16 PM for an Oct 7 release. The website may go up ~15 s after the wires get the statement. Two data points, not proof.
+- Cloudflare caches pages (including "not found" answers), and it has bot protection. Poll politely, about once a second per URL, only in a short window around the release.
+- **Oct 28, 2026 (next FOMC statement, 2:00 PM ET):** run a watcher that only records when each source shows the statement (Fed page, Fed RSS, Alpaca/Benzinga). No trading. This tells us which source is really fastest before money depends on it. After that: Dec 9.
 
 The same Alpaca account can supply live SPY prices for the market snapshot. On the free plan that price comes from one exchange (IEX) only, which is fine for direction but not exact. If Alpaca's live news turns out to be paid, the fallback is free news RSS feeds, which are slower.
 
@@ -230,6 +239,7 @@ Needs: a live audio source and a fast speech-to-text service (budget TBD), plus 
 - [ ] Script 1: connect to Robinhood's agent server and print its tool list (you sign in yourself)
 - [ ] Logging format with every TTL timestamp and every model probability
 - [ ] Scheduled-event fast path (pre-decided lookup table), FOMC first
+- [ ] Oct 28 FOMC source-timing watcher: when does each source show the statement?
 
 **Open questions:**
 
